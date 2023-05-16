@@ -1,4 +1,3 @@
-
 from matplotlib.colors import ListedColormap
 from sklearn.datasets import make_moons
 from sklearn.cluster import KMeans
@@ -64,23 +63,14 @@ with pm.Model() as model:
     y_obs = pm.Bernoulli('y_obs', p=output, observed=y)
 
     # Запускаем алгоритм ADVI для обучения модели
-    approx = pm.fit(n=10000, method='advi')
+    approx = pm.fit(n=1000000, method='advi', n_init=10)
 
-    # Инициализируем объект KFold для разбиения данных
-    kfold = KFold(n_splits=10)
-
-# Обучаем модель на каждом фолде
-    for train_idx, test_idx in kfold.split(X):
-        # Выбираем данные для текущего фолда
-        X_train, y_train = X[train_idx], y[train_idx]
-        X_test, y_test = X[test_idx], y[test_idx]
-
-        # Обучаем модель на текущем фолде
-        trace = approx.sample(draws=10000)
+     # Обучаем модель на текущем фолде
+    trace = approx.sample(draws=100000)
 
 # Получаем распределение вероятностей, полученное из байесовской нейронной сети
 with model:
-    ppc = pm.sample_posterior_predictive(trace, samples=10000, model=model, progressbar=True)['y_obs']
+    ppc = pm.sample_posterior_predictive(trace, samples=1000000, progressbar=True)['y_obs']
 y_nn = ppc.mean(axis=0)
 
 # Выводим гистограммы распределений
@@ -174,3 +164,5 @@ plt.xlabel('x1')
 plt.ylabel('x2')
 plt.title('Classification results')
 plt.show()
+
+
