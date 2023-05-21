@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 # Генерируем случайные данные
-X, y = make_moons(n_samples=1000, noise=0.1)
+X, y = make_moons(n_samples=1000, noise=0.2)
 
 # Создаем модель KMeans с двумя кластерами
 kmeans = KMeans(n_clusters=2)
@@ -62,16 +62,15 @@ with pm.Model() as model:
     # Определяем распределение Бернулли для меток классов
     y_obs = pm.Bernoulli('y_obs', p=output, observed=y)
 
-    # Запускаем алгоритм ADVI для обучения модели
-    approx = pm.fit(n=1000000, method='advi', n_init=10)
+    # Run the ADVI algorithm to train the model
+    approx = pm.fit(n=100000, method='advi', obj_optimizer=pm.adagrad(), total_grad_norm_constraint=100)
 
-     # Обучаем модель на текущем фолде
-    trace = approx.sample(draws=100000)
+    trace = approx.sample(draws=10000)
 
-# Получаем распределение вероятностей, полученное из байесовской нейронной сети
-with model:
-    ppc = pm.sample_posterior_predictive(trace, samples=1000000, progressbar=True)['y_obs']
-y_nn = ppc.mean(axis=0)
+    # Generate samples from the posterior predictive distribution
+    ppc = pm.sample_posterior_predictive(trace, model=model, samples=200000)
+
+y_nn = ppc['y_obs'].mean(axis=0)
 
 # Выводим гистограммы распределений
 import matplotlib.pyplot as plt
@@ -164,5 +163,3 @@ plt.xlabel('x1')
 plt.ylabel('x2')
 plt.title('Classification results')
 plt.show()
-
-
